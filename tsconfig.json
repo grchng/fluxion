@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "server/server.js", "server/server.test.js"  ],
   "exclude": ["node_modules"]
 }
