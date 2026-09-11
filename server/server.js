@@ -64,6 +64,17 @@ export function createSyncServer({ port }) {
                     text: message.text,
                 }, socket);
             }
+
+            if (message.type === 'search') {
+                console.log('search for:', message.roomId, '→', rooms.has(message.roomId));
+                socket.send(JSON.stringify({
+                    type: 'search-results',
+                    roomId: message.roomId,
+                    exists: rooms.has(message.roomId),
+                }))
+
+                return;
+            }
         }); // end of socket message
 
         // close connection
@@ -73,16 +84,17 @@ export function createSyncServer({ port }) {
 
             // get member info before deleting socket
             const member = room.get(socket);
-            room.delete(socket);
 
-            if (member) {
-                alertRoom(room, {type: 'system', text: `${member.displayName} left the room`})
-            }
+            room.delete(socket);
 
             // empty room
             if (room.size === 0) {
                 rooms.delete(joinedRoomId);
                 return;
+            }
+
+            if (member) {
+                alertRoom(room, {type: 'system', text: `${member.displayName} left the room`})
             }
         });
 
