@@ -32,8 +32,10 @@ fluxion/
 │   ├── PlayerPanel.tsx
 │   └── ChatPanel.tsx
 │
+├── hooks/
+│   └── useSyncConnection.ts
+│
 ├── lib/
-│   ├── useSyncConnection.ts
 │   ├── parseMediaUrl.ts
 │   └── adapters/
 │       ├── index.ts
@@ -44,7 +46,8 @@ fluxion/
     ├── package.json
     ├── package-lock.json
     ├── node_modules/
-    └── server.js
+    ├── server.js
+    └── server.test.js
 </pre>
 
 ## Technologies
@@ -252,6 +255,43 @@ const rooms = Map {
   }
 }
 ```
+
+## Phase 1 - Testing server for chat functionality
+- `server.test.js`
+- `npm test`
+
+
+## Phase 2 - Render UI for messages
+- `components/ChatPanel.tsx`
+- `app/room/[roomId]/page.tsx`
+  - going to `localhost:3000/room/test` shows "Room test"
+  ```tsx
+  import { useParams } from "next/navigation";
+
+  export default function RoomPage() {
+    const params = useParams();
+    const roomId = String(params.roomId).toUpperCase();
+
+    return <main>Room {roomId}</main>;
+  }
+  ```
+  - create a socket in useEffect
+    - add socket eventListeners for 'open' and 'message'
+    - `return () => socket.close()` and in terminal you'll see "person joined TEST" "person left TEST"
+    - implement sending messages - using useRef in roomId page and iterating thru messages in chatPanel. set socketRef in u
+  - store incoming messages in state and render it in ChatPanel
+  - add input that has onChange and onKeydown to keep track of when entered and typing values
+
+## Phase 3 - Connect the homepage to the room
+- in homepage use `useRouter`
+- create function to push the url path to the room `router.push(``)`
+
+## Phase 4 - Add video player
+- `lib/parseMediaUrl.ts`
+- `lib/adapters/youtube.ts`
+
+
+
 --------------------------------
 
 
@@ -309,3 +349,38 @@ npm test
 - https://medium.com/@edhalliwell/chat-app-driven-by-websockets-using-socket-io-and-typescript-ed49611d6077
 
 
+## Cheatsheet
+### Browser side, on a WebSocket object
+
+
+Syntax |	What it does
+--- | --
+new WebSocket(url)	| Opens a connection. Returns immediately, before it's ready.
+socket.send(string)	| Sends a message. Throws if the socket isn't open yet.
+socket.close()	| Closes the connection.
+socket.readyState	| Number: 0 connecting, 1 open, 2 closing, 3 closed.
+socket.addEventListener('open', fn)	| Fires once when the handshake finishes.
+socket.addEventListener('message', fn)	| Fires per incoming message. Payload is event.data.
+socket.addEventListener('close', fn)	| Fires when the connection ends.
+socket.addEventListener('error', fn)	| Fires on failure, like the server being down.
+
+
+### Server side with ws, two different objects.
+
+The server:
+
+Syntax	| What it does
+--- | ---
+new WebSocketServer({ port })	| Starts listening.
+server.on('connection', fn)	| Fires once per client. Gives you their socket.
+server.close()| Stops the server.
+
+### Each client's socket:
+
+Syntax | 	What it does
+--- | ---
+socket.send(string)	| Sends to that one client.
+socket.on('message', fn)	| Fires per message from that client. Payload is a Buffer.
+socket.once('message', fn)	| Same, but fires once then removes itself.
+socket.on('close', fn)	| That client disconnected.
+socket.on('error', fn)	| That client's connection failed.
