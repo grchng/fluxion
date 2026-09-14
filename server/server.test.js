@@ -2,7 +2,7 @@ import {describe, test, expect, afterEach} from 'vitest';
 import WebSocket from 'ws';
 import {createSyncServer} from './server.js'
 
-describe('room messages', () => {
+describe('env messages', () => {
     // SERVER SETUP ---------------------------------------------------------
     let activeServers = [];
 
@@ -13,9 +13,9 @@ describe('room messages', () => {
 
     function startTestServerOnRandomPort() {
         // create any port
-        const {server, rooms} = createSyncServer({port: 0});
+        const {server, environments} = createSyncServer({port: 0});
         activeServers.push(server);
-        return { port: server.address().port, rooms };
+        return { port: server.address().port, environments };
     }
 
     function connectClient(port) {
@@ -40,7 +40,7 @@ describe('room messages', () => {
     }
 
     // TESTS ---------------------------------------------------------
-    test('are sent to others in the same room', async () => {
+    test('are sent to others in the same env', async () => {
         // create port
         const { port } = startTestServerOnRandomPort();
 
@@ -49,8 +49,8 @@ describe('room messages', () => {
         const socket2 = await connectClient(port);
 
         // send join msg for users
-        send(socket1, { type: 'join', roomId: 'test', displayName: 'Person 1'});
-        send(socket2, { type: 'join', roomId: 'test', displayName: 'Person 2'});
+        send(socket1, { type: 'join', envId: 'test', displayName: 'Person 1'});
+        send(socket2, { type: 'join', envId: 'test', displayName: 'Person 2'});
 
         // {socket1 : { type: 'system', text: 'Person 2 joined' }}
         await waitForMessage(socket1); // read it, return value - now socket 1 queue is empty
@@ -68,7 +68,7 @@ describe('room messages', () => {
     });
 
 
-    test('are not sent to others in different rooms', async () => {
+    test('are not sent to others in different environments', async () => {
         // create only one port per websocket server
         const { port } = startTestServerOnRandomPort();
 
@@ -77,8 +77,8 @@ describe('room messages', () => {
         const socket2 = await connectClient(port);
 
         // send join msg for users
-        send(socket1, { type: 'join', roomId: 'testA', displayName: 'Person 1'});
-        send(socket2, { type: 'join', roomId: 'testB', displayName: 'Person 2'});
+        send(socket1, { type: 'join', envId: 'testA', displayName: 'Person 1'});
+        send(socket2, { type: 'join', envId: 'testB', displayName: 'Person 2'});
 
         let socket2Receives = false;
         // socket2 should never receive msg, so if it is true then it means something is wrong
@@ -93,20 +93,20 @@ describe('room messages', () => {
         socket2.close();
     })
 
-    test('alerts everyone when someone joins the same room', async () => {
+    test('alerts everyone when someone joins the same env', async () => {
         // create only one port per websocket server
         const { port } = startTestServerOnRandomPort();
 
         // connect
         const socket1 = await connectClient(port);
         // send join msg
-        send(socket1, { type: 'join', roomId: 'test', displayName: 'Person 1'});
+        send(socket1, { type: 'join', envId: 'test', displayName: 'Person 1'});
         const socket1Receives = waitForMessage(socket1); // trap set
 
         const socket2 = await connectClient(port);
         let socket2Receives = false;
         socket2.on('message', () => { socket2Receives = true; }) // socket2.on() fires on every msg
-        send(socket2, { type: 'join', roomId: 'test', displayName: 'Person 2'});
+        send(socket2, { type: 'join', envId: 'test', displayName: 'Person 2'});
 
         const message1 = await socket1Receives;
         await wait(100);
@@ -120,7 +120,7 @@ describe('room messages', () => {
         socket2.close();
     });
 
-    test('alerts everyone when someone leaves the same room', async () => {
+    test('alerts everyone when someone leaves the same env', async () => {
         // create only one port per websocket server
         const { port } = startTestServerOnRandomPort();
 
@@ -128,8 +128,8 @@ describe('room messages', () => {
         const socket1 = await connectClient(port);
         const socket2 = await connectClient(port);
 
-        send(socket1, { type: 'join', roomId: 'testA', displayName: 'Person 1' });
-        send(socket2, { type: 'join', roomId: 'testA', displayName: 'Person 2' });
+        send(socket1, { type: 'join', envId: 'testA', displayName: 'Person 1' });
+        send(socket2, { type: 'join', envId: 'testA', displayName: 'Person 2' });
 
         await waitForMessage(socket1); // drain "Person 2 joined"
 
@@ -144,46 +144,46 @@ describe('room messages', () => {
         socket1.close();
     });
 
-    test('deletes all empty rooms from memory', async () => {
+    test('deletes all empty environments from memory', async () => {
         // create only one port per websocket server
-        const { port, rooms } = startTestServerOnRandomPort();
+        const { port, environments } = startTestServerOnRandomPort();
 
         const socket1 = await connectClient(port)
         const socket2 = await connectClient(port)
-        // send is what creates the room 'testA'
-        send(socket1, { type: 'join', roomId: 'testA', displayName: 'Person 1' });
-        send(socket2, { type: 'join', roomId: 'testB', displayName: 'Person 2' });
+        // send is what creates the env 'testA'
+        send(socket1, { type: 'join', envId: 'testA', displayName: 'Person 1' });
+        send(socket2, { type: 'join', envId: 'testB', displayName: 'Person 2' });
         await wait(50);
 
-        expect(rooms.size).toBe(2)
+        expect(environments.size).toBe(2)
 
         socket1.close();
         socket2.close()
         await wait(100);
 
-        expect(rooms.size).toBe(0)
+        expect(environments.size).toBe(0)
     });
 
-    // rooms.get('testA').size
-    test('deletes a single empty room from memory', async () => {
+    // environments.get('testA').size
+    test('deletes a single empty env from memory', async () => {
         // create only one port per websocket server
-        const { port, rooms } = startTestServerOnRandomPort();
+        const { port, environments } = startTestServerOnRandomPort();
 
         const socket1 = await connectClient(port)
         const socket2 = await connectClient(port)
-        // send is what creates the room 'testA'
-        send(socket1, { type: 'join', roomId: 'testA', displayName: 'Person 1' });
-        send(socket2, { type: 'join', roomId: 'testB', displayName: 'Person 2' });
+        // send is what creates the env 'testA'
+        send(socket1, { type: 'join', envId: 'testA', displayName: 'Person 1' });
+        send(socket2, { type: 'join', envId: 'testB', displayName: 'Person 2' });
         await wait(50);
 
-        expect(rooms.size).toBe(2)
+        expect(environments.size).toBe(2)
 
         socket1.close();
 
         await wait(100);
 
-        expect(rooms.size).toBe(1)
-        expect(rooms.get('testA')).toBeUndefined();
+        expect(environments.size).toBe(1)
+        expect(environments.get('testA')).toBeUndefined();
      });
 
      test('survives malformed input', async () => {
@@ -192,12 +192,12 @@ describe('room messages', () => {
         const socket1 = await connectClient(port);
         const socket2 = await connectClient(port);
 
-        send(socket1, { type: 'join', roomId: 'testA', displayName: 'Person 1' });
-        send(socket2, { type: 'join', roomId: 'testA', displayName: 'Person 2' });
+        send(socket1, { type: 'join', envId: 'testA', displayName: 'Person 1' });
+        send(socket2, { type: 'join', envId: 'testA', displayName: 'Person 2' });
 
         await waitForMessage(socket1); // drain "Person 2 joined"
 
-        socket1.send('this is a string, and not JSON {type, roomId, displayName}')
+        socket1.send('this is a string, and not JSON {type, envId, displayName}')
         await(wait(50))
 
         const socket2Receives = waitForMessage(socket2); // socket 2 listening for msgs
@@ -214,12 +214,12 @@ describe('room messages', () => {
         const socket1 = await connectClient(port);
         const socket2 = await connectClient(port);
 
-        send(socket1, { type: 'join', roomId: 'testA', displayName: 'Person 1' });
-        send(socket2, { type: 'join', roomId: 'testA', displayName: 'Person 2' });
+        send(socket1, { type: 'join', envId: 'testA', displayName: 'Person 1' });
+        send(socket2, { type: 'join', envId: 'testA', displayName: 'Person 2' });
 
         await waitForMessage(socket1); // drain "Person 2 joined"
 
-        socket1.send('this is a string, and not JSON {type, roomId, displayName}')
+        socket1.send('this is a string, and not JSON {type, envId, displayName}')
         await(wait(50))
 
         const socket2Receives = waitForMessage(socket2); // socket 2 listening for msgs
@@ -236,7 +236,7 @@ describe('room messages', () => {
         const socket1 = await connectClient(port);
         const socket2 = await connectClient(port);
 
-        send(socket2, {type: 'join', roomId: 'testA', displayName: 'Person 2'})
+        send(socket2, {type: 'join', envId: 'testA', displayName: 'Person 2'})
 
         let socket2Receives = false;
         socket2.on('message', () => { socket2Receives = true; });
