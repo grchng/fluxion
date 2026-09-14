@@ -37,7 +37,7 @@ export function createSyncServer({ port }) {
             // add socket connections to room when someone new joins
             if (message.type === 'join') {
                 joinedRoomId = message.roomId;
-                const displayName = message.displayName || 'StrangerDanger';
+                const displayName = message.displayName;
 
                 // room not created
                 if (!rooms.has(joinedRoomId)) {
