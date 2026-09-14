@@ -40,7 +40,7 @@ export function createSyncServer({ port }) {
                 const displayName = message.displayName;
 
                 // env not created
-                if (!environements.has(joinedEnvId)) {
+                if (!environments.has(joinedEnvId)) {
                     environments.set(joinedEnvId, new Map())
                 }
 
