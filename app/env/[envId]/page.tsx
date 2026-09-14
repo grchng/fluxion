@@ -2,18 +2,28 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import { Copy, Check } from "lucide-react";
 import { ChatPanel } from "src/components/ChatPanel";
 import { ChatMessage } from "src/types/shared";
 
-export default function RoomPage() {
+export default function EnvPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [displayName] = useState(() => {
     if (typeof window === "undefined") return "Guest";
     return localStorage.getItem("displayName") ?? "Guest";
   });
+  const [isCopied, setIsCopied] = useState(false);
+
   const params = useParams();
   const roomId = String(params.roomId).toUpperCase();
   const socketRef = useRef<WebSocket | null>(null);
+
+  function copyRoomLink() {
+    const roomLink = window.location.href;
+    navigator.clipboard.writeText(roomLink);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  }
 
   function sendChat(text: string) {
     const newMessage = { type: "chat", text, displayName };
@@ -47,9 +57,26 @@ export default function RoomPage() {
   }, [roomId, displayName]);
 
   return (
-    <main>
-      Room {roomId}
-      <ChatPanel messages={messages} sendChat={sendChat} />
+    <main className="min-h-screen bg-flux-bg p-3 font-mono">
+      <div className="flex">
+        <p className="mb-2 text-xs text-flux-text">Room {roomId}</p>
+        <button
+          onClick={copyRoomLink}
+          aria-label="Copy room link"
+          className="text-flux-dim hover:text-flux-cyan flex justify-center">
+          {isCopied ? (
+            <Check size={14} className="text-flux-cyan" />
+          ) : (
+            <Copy size={14} />
+          )}
+        </button>
+      </div>
+      <div className="flex h-[400px] gap-0 border border-flux-border">
+        <div className="flex-1 bg-flux-stage" />
+        <div className="w-[190px]">
+          <ChatPanel messages={messages} sendChat={sendChat} />
+        </div>
+      </div>
     </main>
   );
 }
