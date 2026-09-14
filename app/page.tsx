@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createRoomCode } from "src/utils/createRoomCode";
+import { createEnvCode } from "src/utils/createEnvCode";
 
 export default function HomePage() {
   const router = useRouter();
@@ -10,21 +10,21 @@ export default function HomePage() {
     if (typeof window === "undefined") return "";
     return localStorage.getItem("displayName") ?? "";
   });
-  const [roomCode, setRoomCode] = useState("");
+  const [envCode, setEnvCode] = useState("");
   const [error, setError] = useState("");
 
   function saveDisplayName() {
     localStorage.setItem("displayName", displayName.trim());
   }
 
-  function startRoom(code: string) {
+  function startEnv(code: string) {
     saveDisplayName();
-    router.push(`/room/${code.toUpperCase()}`);
+    router.push(`/env/${code.toUpperCase()}`);
   }
 
-  function joinRoom(code: string) {
-    const roomId = code.trim().toUpperCase();
-    if (!roomId) return;
+  function joinEnv(code: string) {
+    const envId = code.trim().toUpperCase();
+    if (!envId) return;
 
     setError("");
 
@@ -32,7 +32,7 @@ export default function HomePage() {
 
     // open connection first from browser -> server
     tempSocket.addEventListener("open", () => {
-      tempSocket.send(JSON.stringify({ type: "search", roomId }));
+      tempSocket.send(JSON.stringify({ type: "search", envId }));
     });
 
     // message from server to browser
@@ -45,9 +45,9 @@ export default function HomePage() {
       if (message.exists) {
         saveDisplayName();
         // go to that route
-        router.push(`/room/${message.roomId}`);
+        router.push(`/env/${message.envId}`);
       } else {
-        setError("No room with that code");
+        setError("No env with that code");
       }
     });
 
@@ -81,8 +81,11 @@ export default function HomePage() {
             id="name-field"
             type="text"
             value={displayName}
-            placeholder="display name"
-            onChange={(event) => setDisplayName(event.target.value)}
+            placeholder="DISPLAY NAME"
+            onChange={(event) =>
+              setDisplayName(event.target.value.toUpperCase())
+            }
+            required
             className="w-full border border-flux-border bg-transparent px-3 py-2 text-[13px]
             text-flux-text placeholder:text-flux-faint focus:border-flux-cyan focus:outline-none"
           />
@@ -91,25 +94,25 @@ export default function HomePage() {
         <div className="mt-4">
           <label
             htmlFor="code-field"
-            className="mb-1.5 block text-[11px] tracking-widest text-flux-dim">
-            ROOM CODE
+            className="mb-1.5 block text-[11px] tracking-widest text-flux-dim uppercase">
+            Env code
           </label>
           <div className="flex gap-2">
             <input
               id="code-field"
               type="text"
-              value={roomCode}
+              value={envCode}
               placeholder="HXQ-402"
-              onChange={(event) => setRoomCode(event.target.value)}
+              onChange={(event) => setEnvCode(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && roomCode) joinRoom(roomCode);
+                if (event.key === "Enter" && envCode) joinEnv(envCode);
               }}
               className="flex-1 border border-flux-border bg-transparent px-3 py-2 text-[13px]
               tracking-widest text-flux-text placeholder:text-flux-faint focus:border-flux-cyan focus:outline-none"
             />
             <button
-              onClick={() => joinRoom(roomCode)}
-              disabled={!roomCode}
+              onClick={() => joinEnv(envCode)}
+              disabled={!envCode}
               className="border border-flux-cyan px-5 text-xs tracking-widest text-flux-cyan
               hover:bg-flux-cyan/10 disabled:opacity-30 disabled:hover:bg-transparent uppercase">
               Join
@@ -126,9 +129,9 @@ export default function HomePage() {
         </div>
 
         <button
-          onClick={() => startRoom(createRoomCode())}
+          onClick={() => startEnv(createEnvCode())}
           className="w-full border border-flux-yellow py-2.5 text-xs tracking-[0.2em] text-flux-yellow hover:bg-flux-yellow/10 uppercase">
-          Start a room
+          Start Env
         </button>
         <p className="mt-2.5 text-center text-[11px] text-flux-faint">
           You&apos;ll get a code to share.
