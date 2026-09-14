@@ -15,12 +15,12 @@ export default function EnvPage() {
   const [isCopied, setIsCopied] = useState(false);
 
   const params = useParams();
-  const roomId = String(params.roomId).toUpperCase();
+  const envId = String(params.envId).toUpperCase();
   const socketRef = useRef<WebSocket | null>(null);
 
-  function copyRoomLink() {
-    const roomLink = window.location.href;
-    navigator.clipboard.writeText(roomLink);
+  function copyEnvLink() {
+    const envLink = window.location.href;
+    navigator.clipboard.writeText(envLink);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   }
@@ -41,7 +41,7 @@ export default function EnvPage() {
       socket.send(
         JSON.stringify({
           type: "join",
-          roomId,
+          envId,
           displayName,
         }),
       );
@@ -54,15 +54,15 @@ export default function EnvPage() {
     });
 
     return () => socket.close();
-  }, [roomId, displayName]);
+  }, [envId, displayName]);
 
   return (
     <main className="min-h-screen bg-flux-bg p-3 font-mono">
       <div className="flex">
-        <p className="mb-2 text-xs text-flux-text">Room {roomId}</p>
+        <p className="mb-2 text-xs text-flux-text uppercase">Env {envId}</p>
         <button
-          onClick={copyRoomLink}
-          aria-label="Copy room link"
+          onClick={copyEnvLink}
+          aria-label="Copy env link"
           className="text-flux-dim hover:text-flux-cyan flex justify-center">
           {isCopied ? (
             <Check size={14} className="text-flux-cyan" />
