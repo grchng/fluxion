@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createEnvCode } from "src/utils/createEnvCode";
+import { createEnvCode } from "@/utils/createEnvCode";
 
 export default function HomePage() {
   const router = useRouter();
