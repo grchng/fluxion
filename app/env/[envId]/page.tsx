@@ -18,9 +18,8 @@ export default function EnvPage() {
   const envId = String(params.envId).toUpperCase();
   const socketRef = useRef<WebSocket | null>(null);
 
-  function copyEnvLink() {
-    const envLink = window.location.href;
-    navigator.clipboard.writeText(envLink);
+  function copyEnvCode() {
+    navigator.clipboard.writeText(envId);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   }
@@ -61,7 +60,7 @@ export default function EnvPage() {
       <div className="flex">
         <p className="mb-2 text-xs text-flux-text uppercase">Env {envId}</p>
         <button
-          onClick={copyEnvLink}
+          onClick={copyEnvCode}
           aria-label="Copy env link"
           className="text-flux-dim hover:text-flux-cyan flex justify-center">
           {isCopied ? (
